@@ -114,6 +114,35 @@ object List {
     foldLeft(l, (b: B) => b)((g, a) => b => g(f(a, b)))(z)
   }
 
+  def foldLeftFR_1[A, B](as: List[A], z: B)(combiner: (B, A) => B): B = {
+    type BtoB = B => B
+    def innerIdent: BtoB = (b: B) => b
+    def combinerDelayer: (A, BtoB) => BtoB =
+      (a: A, delayFunc: BtoB) => (b: B) => delayFunc(combiner(b, a))
+    def go: BtoB = foldRight(as, innerIdent)(combinerDelayer)
+    go(z)
+  }
+
+  /*
+    def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
+      case Nil => z
+      case Cons(h, t) => f(h, foldRight(t, z)(f))
+  	}
+   */
+
+  /*
+  foldLeftFR_1(List(1, 2, 3), Nil: List[Int])((b: B, a: A) => Cons(a, b))
+  foldRight(List(1, 2, 3), innerIdent)(combineDelayer)(Nil)
+  combineDelayer(1, foldRight(List(2, 3), innerIdent)(combineDelayer)(Nil))
+
+  def delay3(b: B) = innerIdent(combiner(b, 3))
+  def delay2(b: B) = delay3(combiner(b, 2))
+  def delay1(b: B) = delay2(combiner(b, 1))
+  delay1(Nil)
+
+  innerIdent(combiner(combiner(combiner(Nil, 1), 2), 3))
+  */
+
   // Exercise 14
   def appendViaFold[A](a1: List[A], a2: List[A]): List[A] = {
     foldRight(a1, a2)(Cons(_, _))
@@ -229,6 +258,7 @@ object List {
     println("List foldRightFL: " + foldRightFL(example, Nil: List[Int])(Cons(_, _)))
     println("List foldLeft: " + foldLeft(example, Nil: List[Int])((acc, h) => Cons(h, acc)))
     println("List foldLeftFR: " + foldLeftFR(example, Nil: List[Int])((acc, h) => Cons(h, acc)))
+    println("List foldLeftFR_1: " + foldLeftFR_1(example, Nil: List[Int])((acc, h) => Cons(h, acc)))
 
     // Exercise 14
     println("append foldRight: " + appendViaFold(example, example2))
