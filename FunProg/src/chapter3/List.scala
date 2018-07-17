@@ -124,23 +124,26 @@ object List {
   }
 
   /*
-    def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
-      case Nil => z
-      case Cons(h, t) => f(h, foldRight(t, z)(f))
-  	}
-   */
-
+  def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
+    case Nil => z
+    case Cons(h, t) => f(h, foldRight(t, z)(f))
+	}
+  */
+  
   /*
   foldLeftFR_1(List(1, 2, 3), Nil: List[Int])((b: B, a: A) => Cons(a, b))
-  foldRight(List(1, 2, 3), innerIdent)(combineDelayer)(Nil)
-  combineDelayer(1, foldRight(List(2, 3), innerIdent)(combineDelayer)(Nil))
-
-  def delay3(b: B) = innerIdent(combiner(b, 3))
-  def delay2(b: B) = delay3(combiner(b, 2))
-  def delay1(b: B) = delay2(combiner(b, 1))
-  delay1(Nil)
-
-  innerIdent(combiner(combiner(combiner(Nil, 1), 2), 3))
+  combineDelayer(1, foldRight(List(2,3), innerIdent)(combineDelayer))
+  combineDelayer(1, combineDelayer(2, foldRight(List(3), innerIdent)(combineDelayer)))
+  combineDelayer(1, combineDelayer(2, combineDelayer(3, foldRight(Nil, innerIdent)(combineDelayer))))
+  combineDelayer(1, combineDelayer(2, combineDelayer(3, innerIdent)))
+  combineDelayer(1, combineDelayer(2, innerIdent(combiner(b, 3))))
+  combineDelayer(1, innerIdent(combiner(combiner(b, 2), 3)))
+  def go: BtoB = innerIdent(combiner(combiner(combiner(b, 1), 2), 3))
+  go(Nil) = innerIdent(combiner(combiner(combiner(Nil, 1), 2), 3))
+  go(Nil) = innerIdent(combiner(combiner(Cons(1, Nil), 2), 3))
+  go(Nil) = innerIdent(combiner(Cons(2, Cons(1, Nil)), 3))
+  go(Nil) = innerIdent(Cons(3, Cons(2, Cons(1, Nil))))
+  go(Nil) = Cons(3, Cons(2, Cons(1, Nil)))
   */
 
   // Exercise 14
