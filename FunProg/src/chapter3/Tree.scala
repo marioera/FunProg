@@ -48,9 +48,13 @@ object Tree {
     fold(t)(a => a)(_.max(_))
   }
 
-  /*def depthViaFold[A](t: Tree[A]): Int = {
-    fold(t)(a => 0)()
-  }*/
+  def depthViaFold[A](t: Tree[A]): Int = {
+    fold(t)(a => 0)(1 + _.max(_))
+  }
+
+  def mapViaFold[A, B](t: Tree[A])(f: (A) => B): Tree[B] = {
+    fold(t)(a => Leaf(f(a)): Tree[B])(Branch(_, _))
+  }
 
   def main(args: Array[String]): Unit = {
     val tree0 = Leaf(1)
@@ -85,6 +89,11 @@ object Tree {
     println("maximumViaFold: " + maximumViaFold(tree0))
     println("maximumViaFold: " + maximumViaFold(tree1))
     println("maximumViaFold: " + maximumViaFold(tree2))
+    println("depthViaFold: " + depthViaFold(tree0))
+    println("depthViaFold: " + depthViaFold(tree1))
+    println("depthViaFold: " + depthViaFold(tree2))
+    println("mapViaFold: " + mapViaFold(tree2)(_ + 1))
+    println("mapViaFold: " + mapViaFold(tree2)(_ * 5))
 
   }
 }
