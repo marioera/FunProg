@@ -74,6 +74,30 @@ object Option {
     map2(Some(pat), Some(pat2))((a, b) => a.isEmpty() && b.isEmpty())
   }
 
+  // Exercise 5
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = {
+    a.foldRight(Some(Nil): Option[List[A]])((x, y) => map2(x, y)(_ :: _))
+  }
+
+  def sequence2[A](a: List[Option[A]]): Option[List[A]] = {
+    def loop_sequence[A](a: List[Option[A]], acc: Option[List[A]]): Option[List[A]] = a match {
+      case Nil => acc
+      case None :: t => None
+      case Some(a) :: t => loop_sequence(t, Some(a :: acc.getOrElse(List())))
+    }
+
+    loop_sequence(a, Some(Nil))
+  }
+
+  // Exercise 6
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = {
+    a.foldRight(Some(Nil): Option[List[B]])((a, b) => map2(f(a), b)(_ :: _))
+  }
+
+  def sequenceViaTraverse[A](a: List[Option[A]]): Option[List[A]] = {
+    traverse(a)(aa => aa)
+  }
+
   def main(args: Array[String]): Unit = {
     val option0 = None
     val option1 = Some(5)
@@ -106,14 +130,33 @@ object Option {
     println("variance: " + variance(list0))
     println("variance: " + variance(list1))
 
-    //Exercise 3
+    // Exercise 3
     println("map2: " + map2(option1, option2)(_ + "|" + _))
     println("map3: " + map2(option1, option2)(_ + "|" + _))
 
-    //Exercise 4
+    // Exercise 4
     println("bothMatch2: " + bothMatch2("", "", ""))
     println("bothMatch2: " + bothMatch2("Hello", "World", ""))
+
+    // Exercise 5
+    val optionList0 = Nil
+    val optionList1 = List(Some(1), Some(2), None, Some(4))
+    val optionList2 = List(Some(1), Some(2), Some(3), Some(4))
+
+    println("sequence: " + sequence(optionList0))
+    println("sequence: " + sequence(optionList1))
+    println("sequence: " + sequence(optionList2))
+
+    // Exercise 6
+    val optionList3 = List(1, 3, 4, 5, 7)
+    val optionList4 = List(1, 3, 5, 7)
+
+    println("traverse: " + traverse(optionList0)((a: Int) => if (a % 2 == 1) Some(a) else None))
+    println("traverse: " + traverse(optionList3)((a: Int) => if (a % 2 == 1) Some(a) else None))
+    println("traverse: " + traverse(optionList4)((a: Int) => if (a % 2 == 1) Some(a) else None))
+
+    println("sequenceViaTraverse: " + sequenceViaTraverse(optionList0))
+    println("sequenceViaTraverse: " + sequenceViaTraverse(optionList1))
+    println("sequenceViaTraverse: " + sequenceViaTraverse(optionList2))
   }
 }
-
-
