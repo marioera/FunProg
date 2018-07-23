@@ -71,6 +71,81 @@ sealed trait Stream[+A] {
     foldRight(Empty: Stream[B])((a, b) => f(a).append(b))
   }
 
+  // Exercise 12
+  def mapViaUnfold[B](f: A => B): Stream[B] = {
+    unfold(this) {
+      case Cons(h, t) => Some((f(h()), t()))
+      case _ => None
+    }
+  }
+
+  def takeViaUnfold(n: Int): Stream[A] = {
+    unfold((this, n)) {
+      case (Cons(h, t), 1) => Some((h(), (Empty, 0)))
+      case (Cons(h, t), n) => Some((h(), (t(), n - 1)))
+      case _ => None
+    }
+  }
+
+  def takeWhileViaUnfold(f: A => Boolean): Stream[A] = {
+    unfold(this) {
+      case Cons(h, t) if (f(h())) => Some((h(), t()))
+      case _ => None
+    }
+  }
+
+  def zipWith[B, C](b: Stream[B])(f: (A, B) => C): Stream[C] = {
+    unfold((this, b)) {
+      case (Empty, _) => None
+      case (_, Empty) => None
+      case (Cons(ah, at), Cons(bh, bt)) => Some((f(ah(), bh()), (at(), bt())))
+    }
+  }
+
+  def zip[B](b: Stream[B]): Stream[(A, B)] = {
+    zipWith(b)((_, _))
+  }
+
+  def zipWithAll[B, C](b: Stream[B])(f: (Option[A], Option[B]) => C): Stream[C] = {
+    unfold((this, b)) {
+      case (Empty, Empty) => None
+      case (Cons(ah, at), Empty) => Some((f(Some(ah()), None), (at(), Empty)))
+      case (Empty, Cons(bh, bt)) => Some((f(None, Some(bh())), (Empty, bt())))
+      case (Cons(ah, at), Cons(bh, bt)) => Some((f(Some(ah()), Some(bh())), (at(), bt())))
+    }
+  }
+
+  def zipAll[B](b: Stream[B]): Stream[(Option[A], Option[B])] = {
+    zipWithAll(b)((_, _))
+  }
+
+  // Exercise 13
+  def startsWith[A](s: Stream[A]): Boolean = {
+    zipAll(s).takeWhile(!_._2.isEmpty).forAll {
+      case (a, b) => a == b
+    }
+  }
+
+  // Exercise 14
+  def tails: Stream[Stream[A]] = {
+    unfold(this) {
+      case Cons(h, t) => Some((Cons(h, t), t()))
+      case Empty => None
+    }
+  }
+
+  def hasSubsequence[A](s: Stream[A]): Boolean = {
+    this.tails.exists(_.startsWith(s))
+  }
+
+  // Exercise 15
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = {
+    foldRight((z, Stream(z)))((a, acc) => {
+      lazy val lazyAcc = acc
+      val bH = f(a, lazyAcc._1)
+      (bH, cons(bH, lazyAcc._2))
+    })._2
+  }
 }
 
 case object Empty extends Stream[Nothing]
@@ -91,9 +166,57 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
   }
 
+  val ones: Stream[Int] = cons(1, ones)
+
+  // Exercise 7
+  def constant[A](a: A): Stream[A] = {
+    cons(a, constant(a))
+  }
+
+  // Exercise 8
+  def from(n: Int): Stream[Int] = {
+    cons(n, from(n + 1))
+  }
+
+  // Exercise 9
+  def fibs: Stream[Int] = {
+    def loop_fibs(n: Int, m: Int): Stream[Int] = {
+      cons(n, loop_fibs(m, n + m))
+    }
+
+    loop_fibs(0, 1)
+  }
+
+  // Exercise 10
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    f(z) match {
+      case Some((a, s)) => cons(a, unfold(s)(f))
+      case None => Empty
+    }
+  }
+
+  // Exercise 11
+  def fibsViaUnfold: Stream[Int] = {
+    unfold((0, 1)) { case (n, m) => Some((n, (m, n + m))) }
+    //unfold((0, 1))(s => Some((s._1, (s._2, s._1 + s._2))))
+  }
+
+  def fromViaUnfold(n: Int): Stream[Int] = {
+    unfold(n)(s => Some(s, s + 1))
+  }
+
+  def constantViaUnfold[A](a: A): Stream[A] = {
+    unfold(a)(s => Some(s, s))
+  }
+
+  def onesViaUnfold: Stream[Int] = {
+    unfold(1)(_ => Some(1, 1))
+  }
+
   def main(args: Array[String]): Unit = {
     val stream0 = Empty
     val stream1 = Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    val stream2 = Stream(1, 2, 3)
     println("Stream Empty: " + stream0)
     println("Stream NonEmpty: " + stream1)
 
@@ -123,5 +246,51 @@ object Stream {
     println("filter: " + stream1.filter(a => a % 2 == 0).toList)
     println("append: " + stream1.append(stream1.filter(a => a % 2 == 0)).toList)
     println("flatMap: " + stream1.flatMap(a => Stream(a)).toList)
+
+    println("ones take: " + ones.take(5).toList)
+    println("ones exists: " + ones.exists(_ % 2 != 0))
+    println("ones map: " + ones.map(_ + 1).take(5).toList)
+    println("ones map: " + ones.map(_ + 1).exists(_ % 2 == 0))
+    println("ones takeWhile: " + ones.takeWhile(_ == 1).take(5).toList)
+    println("ones forAll: " + ones.forAll(_ != 1))
+
+    // Exercise 7
+    println("constant take: " + constant(10).take(5).toList)
+    println("constant take: " + constant("a").take(5).toList)
+
+    // Exercise 8
+    println("from: " + from(10).take(5).toList)
+
+    // Exercise 9
+    println("fibs: " + fibs.take(40).toList)
+
+    // Exercise 11
+    println("fibsViaUnfold: " + fibsViaUnfold.take(40).toList)
+    println("fromViaUnfold: " + fromViaUnfold(10).take(5).toList)
+    println("constantViaUnfold: " + constantViaUnfold(10).take(5).toList)
+    println("constantViaUnfold: " + constantViaUnfold("a").take(5).toList)
+    println("onesViaUnfold: " + onesViaUnfold.take(5).toList)
+
+    // Exercise 12
+    println("mapViaUnfold: " + stream1.mapViaUnfold(a => a * a).toList)
+    println("takeViaUnfold: " + stream0.takeViaUnfold(5))
+    println("takeViaUnfold: " + stream1.takeViaUnfold(5).toList)
+    println("takeWhileViaUnfold: " + stream0.takeWhileViaUnfold((a: Int) => a <= 5))
+    println("takeWhileViaUnfold: " + stream1.takeWhileViaUnfold(_ <= 5).toList)
+    println("zipWith: " + stream1.zipWith(ones)((a, b) => (a + b, b)).take(20).toList)
+    println("zip: " + stream1.zip(ones).take(20).toList)
+    println("zipAll: " + stream1.zipAll(ones).take(20).toList)
+
+    // Exercise 13
+    println("startsWith: " + stream1.startsWith(ones))
+    println("startsWith: " + stream1.startsWith(stream2))
+
+    // Exercise 14
+    println("tails: " + stream1.tails.map(_.toList).toList)
+    println("hasSubsequence: " + stream1.hasSubsequence(ones))
+    println("hasSubsequence: " + stream1.hasSubsequence(stream2))
+
+    // Exercise 15
+    println("scanRight: " + stream1.scanRight(0)(_ + _).toList)
   }
 }
