@@ -68,8 +68,60 @@ object RNG {
     loop_ints(count, List())(rng)
   }
 
+  type Rand[+A] = RNG => (A, RNG)
+
+  val int: Rand[Int] =
+    rng => rng.nextInt
+
+  def unit[A](a: A): Rand[A] =
+    rng => (a, rng)
+
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
+    rng => {
+      val (a, rng2) = s(rng)
+      (f(a), rng2)
+    }
+
+  // Exercise 5
+  def positiveMax(n: Int): Rand[Int] = {
+    map(positiveInt)(_ % n)
+  }
+
+  // Exercise 6
+  val _double: Rand[Double] =
+    map(positiveInt)(_ / (Int.MaxValue.toDouble + 1))
+
+  // Exercise 7
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+    rng =>
+      {
+        val (a, rng2) = ra(rng)
+        val (b, rng3) = rb(rng2)
+        (f(a, b), rng3)
+      }
+  }
+
+  def _intDouble: Rand[(Int, Double)] = {
+    map2(int, double)((_, _))
+  }
+
+  def _doubleInt: Rand[(Double, Int)] = {
+    map2(double, int)((_, _))
+  }
+
+  // Exercise 8
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
+    fs.foldRight(unit(List[A]()))((a, acc) => map2(a, acc)(_ :: _))
+  }
+
+  def _ints(count: Int): Rand[List[Int]] = {
+    sequence(List.fill(count)(int))
+  }
+
   def main(args: Array[String]): Unit = {
-    val rnd0 = simple(50L)
+    val rnd0 = simple(10L)
+    val rnd1 = simple(50L)
+
     println("simple: " + rnd0.nextInt._1)
     println("simple: " + rnd0.nextInt._2.nextInt._1)
     println("randomPair: " + randomPair(simple(50L))._1)
@@ -85,5 +137,25 @@ object RNG {
     println("double3: " + double3(rnd0)._1)
     // Exercise 4
     println("ints: " + ints(10)(rnd0))
+
+    println("int: " + int(rnd0))
+    println("unit: " + unit(10L)(rnd0))
+    println("map: " + map(int)(_ / 50000)(rnd0))
+
+    // Exercise 5
+    println("positiveMax: " + positiveMax(5)(rnd0))
+    println("positiveMax: " + positiveMax(5)(rnd1))
+
+    // Exercise 6
+    println("_double: " + _double(rnd0)._1)
+    println("_double: " + _double(_double(rnd0)._2)._1)
+
+    // Exercise 7
+    println("_intDouble: " + _intDouble(rnd0))
+    println("_doubleInt: " + _doubleInt(rnd0))
+
+    // Exercise 8
+    println("_ints: " + _ints(10)(rnd0))
+
   }
 }
