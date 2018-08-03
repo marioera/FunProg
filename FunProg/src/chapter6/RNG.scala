@@ -118,6 +118,40 @@ object RNG {
     sequence(List.fill(count)(int))
   }
 
+  // Exercise 9
+  def flatMap[A, B](f: Rand[A])(g: A => Rand[B]): Rand[B] = {
+    rng =>
+      {
+        val (a, rng2) = f(rng)
+        g(a)(rng2)
+      }
+  }
+
+  def positiveIntViaFlatMap: Rand[Int] = {
+    flatMap(int)(i => if (i != Int.MinValue) unit(i.abs) else positiveIntViaFlatMap)
+  }
+
+  // Exercise 10
+  def mapViaFlatMap[A, B](s: Rand[A])(f: A => B): Rand[B] = {
+    flatMap(s)(a => unit(f(a)))
+  }
+
+  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+    flatMap(ra)(a => mapViaFlatMap(rb)(b => f(a, b)))
+  }
+
+  def _doubleIntViaFlatMap: Rand[(Double, Int)] = {
+    map2ViaFlatMap(double, int)((_, _))
+  }
+
+  def mapGeneral[S, A, B](s: S => (A, S))(f: A => B): S => (B, S) = {
+    rng =>
+      {
+        val (a, rng2) = s(rng)
+        (f(a), rng2)
+      }
+  }
+
   def main(args: Array[String]): Unit = {
     val rnd0 = simple(10L)
     val rnd1 = simple(50L)
@@ -138,6 +172,7 @@ object RNG {
     // Exercise 4
     println("ints: " + ints(10)(rnd0))
 
+    println("int: " + int)
     println("int: " + int(rnd0))
     println("unit: " + unit(10L)(rnd0))
     println("map: " + map(int)(_ / 50000)(rnd0))
@@ -155,7 +190,15 @@ object RNG {
     println("_doubleInt: " + _doubleInt(rnd0))
 
     // Exercise 8
+    println("List.fill: " + List.fill(10)(int))
     println("_ints: " + _ints(10)(rnd0))
+
+    // Exercise 9
+    println("positiveIntViaFlatMap: " + positiveIntViaFlatMap(rnd0))
+
+    // Exercise 10
+    println("_doubleIntViaFlatMap: " + _doubleIntViaFlatMap(rnd0)._1)
+    println("_doubleIntViaFlatMap: " + _doubleIntViaFlatMap(_doubleIntViaFlatMap(rnd0)._2)._1)
 
   }
 }
