@@ -20,6 +20,10 @@ object RNG {
     ((i1, i2), rng2)
   }
 
+  def boolean(rng: RNG): (Boolean, RNG) = {
+    rng.nextInt match { case (i, rng2) => (i % 2 == 0, rng2) }
+  }
+
   // Exercise 1
   def positiveInt(rng: RNG): (Int, RNG) = {
     val (i, r) = rng.nextInt
